@@ -1,1 +1,1 @@
-Aiyagari Econome
+Aiyagari Economy
