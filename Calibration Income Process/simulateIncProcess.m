@@ -24,7 +24,6 @@ n_t = settings.n_t;
 n_p = settings.n_p;
 
 
-
 % ============1) Preparating the Markov Chains for simulation =========== %
 
 % 1.1 Obtain the income matrix of the income processes and stationary dists
@@ -37,6 +36,23 @@ p_eye = eye(n_p);
 t_eye = eye(n_t);
 t_trans = dt*TM_t + t_eye;
 p_trans = dt*TM_p + p_eye;
+
+% Stability check: If markov-chain matrix has negative values, redistribute
+% and create an absorbing state
+
+if min(min(p_trans)) < 0
+    % take negative value
+    new_tm = max(0,p_trans);
+    % reweight the matrix
+    columns_mass = sum(new_tm,2);
+    p_trans = new_tm./columns_mass;
+elseif min(min(t_trans)) < 0
+    % take negative value
+    new_tm = max(0,t_trans);
+    % reweight the matrix
+    columns_mass = sum(new_tm,2);
+    t_trans = new_tm./columns_mass;    
+end
 
 % 1.3 - Define these objects as quarterly MC transition matrices
 TM_p_qtr = p_trans;
