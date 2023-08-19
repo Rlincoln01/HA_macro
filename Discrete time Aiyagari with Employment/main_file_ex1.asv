@@ -1,0 +1,277 @@
+%=========================================================================
+% Macro 2 - Incomplete markets and heterogenous agents
+% Teacher: Fernando Mendo
+% Semester: 2022.2
+% Rafael Lincoln - 2212890
+%
+% Exercise 1 - Aiyagari Model with employment as state variable
+%=========================================================================
+
+
+%=========================================================================
+%                   Parameters and calibration
+%=========================================================================
+
+%%% Parameters
+borrow_lim  = 0; % ad-hoc borrowing constraint
+alpha = 0.33;
+A = 1;
+delta = 0.025;
+beta = 0.99;
+l_bar = 1/0.9; % # of hours worked
+tau = 0.015; % tax on earnings
+mu_unemp = 0.15; % share of wage received as unemployment benefit
+u = @(c)log(c); %utility function
+
+
+% asset grids
+na          = 300;
+amax        = 80; 
+agrid_par   = 0.4; %1 for linear, 0 for L-shaped
+agrid = linspace(0,1,na)';
+agrid = agrid.^(1./agrid_par);
+agrid = borrow_lim + (amax-borrow_lim).*agrid;
+
+% income: markov chain with employment
+p_00 = 0.6; % probability of remaining unemployed
+p_01 = 1-p_00; % probability of being employed
+p_11 = 0.955555; % probability of remaining employed
+p_10 = 1 - p_11; % probability of being fired
+
+P = [p_00 p_01; p_10 p_11]; % transition matrix
+
+% share of employed household in equilibrium
+e_asy = asymptotics(dtmc(P));
+L = e_asy(2);
+ne = 2 ; % # of states for employment
+
+%=========================================================================
+%                   Question a)
+%=========================================================================
+
+K_demand = @(r) L.*l_bar.*(alpha.*A./r).^(1/(1-alpha));
+
+gridr = linspace(0.025,0.06,50);
+
+K_d = K_demand(gridr);
+figure(1)
+plot(K_d,gridr,"r-","LineWidth",1);
+ylim([0.02,0.065])
+grid;
+title("Capital Demand")
+ylabel("Rental rate of capital - r")
+xlabel("Capital demanded by the firm")
+
+%=========================================================================
+%                   Question b)
+%=========================================================================
+
+% Wage as function of interest rate
+w = @(r) (1-alpha).*A.^(alpha./(1-alpha))*(alpha./(r))^(alpha./(1-alpha));
+
+
+nr = 100;
+rgrid = linspace(0.00001,1/beta -1+delta,nr);
+
+K_s = zeros(1,nr);
+
+disp("Calculating aggregate capital....");
+for ir = 1:nr
+    r = rgrid(ir);
+    w_r = w(r);    
+    [con,cap] = policy_functions(r,w_r,na,borrow_lim,amax);
+    mu = stationary_distribution(na,ne,P,agrid,cap);    
+    K_s(1,ir) = aggregagate_cap(na,agrid,mu);
+end
+disp("done");
+
+figure(2)
+plot(K_s,rgrid,"r-","LineWidth",3);
+grid;
+title("Capital supply")
+xlim([-2 30])
+ylim([-0.001 0.038])
+ylabel("Rental rate of capital - r")
+xlabel("Aggregate capital supplied by the households")
+yl1 = yline(1/beta-1+delta,"b--","$r = \rho+\delta$");
+yl1.LineWidth = 2;
+yl1.Interpreter = "latex";
+yl1.FontSize = 14;
+yl2 = yline(0,"m--","$r = 0$");
+yl2.LineWidth = 2;
+yl2.Interpreter = "latex";
+yl2.FontSize = 14;
+x = xline(0,"k--","$\bar{k}$ = 0");
+x.LineWidth = 2;
+x.Interpreter = "latex";
+x.FontSize = 14;
+x.LabelVerticalAlignment = 'middle';
+x.LabelHorizontalAlignment = 'center';
+
+%=========================================================================
+%                   Question c)
+%=========================================================================
+
+% Calculate demand curve to plot later
+K_d = K_demand(rgrid);
+
+% Compute stationary distribution 
+
+[r_eq,w_eq,K_eq,dist_eq] = calculate_eq(na,ne,P,agrid,borrow_lim,amax,beta,delta,alpha,A, ...
+    L,l_bar);
+
+% Plot equilibrium
+figure(3)
+plot(K_s,rgrid,"r-",K_d,rgrid,"g-","LineWidth",3);
+title("Capital Supply & Demand")
+grid;
+xlim([-2 35])
+ylim([-0.001 0.038])
+ylabel("Rental rate of capital - r")
+xlabel("Aggregate capital supplied by the households")
+yl1 = yline(1/beta-1+delta,"b--","$r = \rho+\delta$");
+yl1.LineWidth = 2;
+yl1.Interpreter = "latex";
+yl1.FontSize = 14;
+yl2 = yline(0,"m--","$r = 0$");
+yl2.LineWidth = 2;
+yl2.Interpreter = "latex";
+yl2.FontSize = 14;
+x = xline(0,"k--","$\bar{k}$ = 0");
+x.LineWidth = 2;
+x.Interpreter = "latex";
+x.FontSize = 14;
+x.LabelVerticalAlignment = 'middle';
+x.LabelHorizontalAlignment = 'center';
+
+%=========================================================================
+%                   Question d) - Sequential Equilibrium
+%=========================================================================
+
+% # of transition periods
+T = 40;
+
+% The Former Equilibrium
+[r_initial,w_initial,K_initial,dist_intial] = calculate_eq(na,ne,P,agrid,borrow_lim,amax,beta,delta,alpha,1, ...
+    L,l_bar);
+
+
+% The New Equilibrium
+[r_final,w_final,K_final,dist_final] = calculate_eq(na,ne,P,agrid,borrow_lim,amax,beta,delta,alpha,0.95, ...
+    L,l_bar);
+
+% == Pre-allocating variables for speed == %
+K_series = zeros(1,T);
+agg_sav_series = zeros(1,T);
+agg_sav_series(1,1) = K_initial;
+K_guess = linspace(K_initial,K_final,T);
+
+
+% == Terminal Condition == %
+[con_final,cap_final] = policy_functions(r_final,w_final,na,borrow_lim,amax);
+
+V_final = value_function(con,cap,na,ne,P,agrid);
+
+% Capital path initial guess %
+
+K_series = K_guess;
+
+max_iter = 50;
+tol_iter = 1.0e-7;
+iter= 0;
+cdiff = 1000;
+disp("Calculating Transition from A=1 to A=" + 0.95 )
+while iter <= max_iter && cdiff > tol_iter    
+
+    % Save time series of transition %
+    cap_series = zeros(T,na,2);
+    con_series = zeros(T,na,2);
+    V_series = zeros(T,na,2);
+    dist_series = zeros(T,na*2);
+   
+    % Final conditions %
+    V_series(T,:,:) = V_final;
+    cap_series(T,:,:) = cap_final;
+    con_series(T,:,:) = con_final;
+    
+    % Initial Conditions %
+    dist_series(1,:) = dist_final;
+
+    [r_series,w_series] = transition_prices(K_series,0.95,alpha,L,l_bar);
+
+    for t = fliplr(linspace(1,T-1,T-1))
+        % Household params for each period
+        R = 1 + r_series(1,t) - delta;
+        y = [mu_unemp*w_series(1,t),(1-tau)*l_bar*w_series(1,t)];
+
+        % index of capital decisions
+        capind = zeros(na,2);
+
+        % Available cash for households
+        cash = R.*agrid + y;
+
+        % Solve backwards value, consumption and saving function
+        for ia=1:na
+            for ie = 1:2
+                Vchoice = u(max(cash(ia,ie)-agrid,0)) + beta.*(squeeze(V_series(t+1,:,:))*P(ie,:)');
+                [~,argmax] = max(Vchoice);
+                capind(ia,ie) = argmax;
+                V_series(t, ia, ie) = Vchoice(capind(ia,ie));
+                cap_series(t, ia, ie) = agrid(capind(ia,ie));
+                con_series(t, ia, ie) = cash(ia,ie) - cap_series(t, ia, ie);
+            end
+        end
+    end
+    
+
+   % Loop iterates forward distributions in time given saving functions
+   for t =1:T-1
+       % find transition matrix in that period
+       [~,Tm] = stationary_distribution(na,ne,P,agrid,squeeze(cap_series(t,:,:)));
+       dist_series(t+1,:) = Tm'*dist_series(t,:)';
+       K = aggregagate_cap(na,agrid,dist_series(t+1,:));
+       agg_sav_series(1,t+1) = K;
+   end
+
+   % check convergence
+   cdiff = max(abs(K_series-agg_sav_series));
+
+   % update rule
+   phi = 0.7;
+
+   K_series = phi*K_series + (1-phi)*agg_sav_series;
+
+   
+   disp("Iteration # " + (iter+1) + " - Diff: " + cdiff);
+   
+
+   iter = iter + 1;
+
+end
+  
+
+figure(4)
+% Transition path r
+subplot(2,2,1)
+plot(r_series,"r-","LineWidth",2);
+grid;
+tlt = title("$r$ - rental rate of capital");
+tlt.Interpreter = "latex";
+% Transition path w
+subplot(2,2,2)
+plot(w_series,"r-","LineWidth",2);
+grid;
+tlt = title("$w$ - wages");
+tlt.Interpreter = "latex";
+% Transition path aggregate K
+subplot(2,2,3)
+plot(K_series,"r-","LineWidth",2);
+grid;
+tlt = title("$K$ - Aggregate Capital ");
+tlt.Interpreter = "latex";
+
+
+
+
+
+
