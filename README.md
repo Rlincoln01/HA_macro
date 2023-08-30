@@ -5,7 +5,6 @@ Repository on my codes for solving and estimating Heterogenous Agent Macroeconom
 - [Introduction](#introduction)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
-- [License](#license)
 - [Acknowledgements](#acknowledgements)
 
 ## Introduction
