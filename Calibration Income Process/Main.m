@@ -43,48 +43,25 @@ draws.t_shocks = rand([settings.n_sim,sim_qtrs]); % transitory
 rng(seed_p);
 draws.p_shocks = rand([settings.n_sim,sim_qtrs]); % persistent
 
-
-% Sample moments - BRA (2013)
-
-sample_moments.std_log_y = 0.9442024;
-sample_moments.std_1yr_log_change = 0.6014516;
-sample_moments.std_5yr_log_change = 0.7186426;
-sample_moments.kurt_1yr_log_change = 8.149073;
-sample_moments.kurt_5yr_log_change = 6.560389;
-sample_moments.P9050_1yr_change = 0.5889188;
-sample_moments.P9050_5yr_change = 0.7162821;
-sample_moments.P5010_1yr_change = 0.6204492;
-sample_moments.P5010_5yr_change = 0.8377209;
-
-% Sample moments - USA (2014)
-
-sample_moments.std_log_y = 0.9677;
-sample_moments.std_1yr_log_change = 0.5402;
-sample_moments.std_5yr_log_change = 0.7636;
-sample_moments.kurt_1yr_log_change = 12.77;
-sample_moments.kurt_5yr_log_change = 8.748;
-sample_moments.P9050_1yr_change = 0.4496;
-sample_moments.P9050_5yr_change = 0.778;
-sample_moments.P5010_1yr_change = 0.4076;
-sample_moments.P5010_5yr_change = 0.6778;
-
+% Sample moments
+sample_moments_file;
 
 % =============== Block 2 - Estimation of the income process =============== %
 
-[par_sol, nfeval] = estimation(settings,draws,sample_moments,parameters);
+[par_sol, nfeval] = estimation(settings,draws,sample_moments.ARG,"argentina"); 
 
 % =============== Block 3 - Settings and Parametrization =============== %
 
 % Ex
 
-sigma_t = 1.74; 
-sigma_p = 1.53;
+sigma_t = 1.6249; 
+sigma_p = 0.905;
 % drift parameters
-beta_t = 0.761;
-beta_p = 0.009;
+beta_t = 0.5504;
+beta_p = 0.0009;
 % poisson arrival rates
-lambda_t = 0.08;
-lambda_p = 0.007;
+lambda_t = 0.0919;
+lambda_p = 0.0129;
 
 parameters = [beta_t,beta_p,sigma_t,sigma_p,lambda_t,lambda_p];
 

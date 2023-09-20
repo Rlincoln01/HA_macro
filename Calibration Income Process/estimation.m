@@ -23,13 +23,14 @@
 % ========================================================================
 
 
-function [par_sol, nfeval] = estimation(settings, draws, sample_moments,initial_guess)
+function [par_sol, nfeval] = estimation(settings, draws, sample_moments,country,initial_guess)
     % This function performs parameter estimation using various optimization algorithms.
     % Check if the optional parameter is provided
-    if nargin < 4
+    if nargin < 5
         initial_guess = 0;
     end
     
+
     % HOUSEKEEPING
     % Define the objective function using a lambda function handle
     f = @(x0) objective_fct(x0,settings,draws,sample_moments);
@@ -43,6 +44,9 @@ function [par_sol, nfeval] = estimation(settings, draws, sample_moments,initial_
         par_sol = multisol.par_sol;
         nfeval = multisol.nfeval;
 
+        % save solutions
+        save("estimation_output\global_solution_estimation_" + country + ".mat","allsol","multisol")
+
     % NELDER MEAD SIMPLEX
     elseif settings.algorithm == 2
         % Perform optimization using Nelder-Mead simplex algorithm
@@ -54,5 +58,9 @@ function [par_sol, nfeval] = estimation(settings, draws, sample_moments,initial_
         % Return the parameter solution and number of function evaluations
         par_sol = opt_res;
         nfeval = output.iterations;
+
+        % save locally
+        save("estimation_output\local_solution_estimation_" + country + ".mat","opt_res","output")
+
     end
 end
