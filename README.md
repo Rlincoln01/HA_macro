@@ -17,7 +17,7 @@ In the following list, I detail the available folders with the models or calibra
 
 - **One-Asset Bewley Economy**: Simple model with small deviations from the baseline version in [(Achdou et al. 2021)](https://academic.oup.com/restud/article/89/1/45/6149490), including fiscal policy and one-time MIT shock on the income-tax rate.
 
-- **Income Process Calibration**: Contains a set of files for calibrating a Continuous-time income process with micro data using an adaptation of [(Guvenen et al. 2021)](https://static1.squarespace.com/static/6246570e617f1d3daf55e1c1/t/628e6309b2e01e636b2ee9b3/1653498634356/guvenen-karahan-ozkan-song-econometrica-2021.pdf) parallelizable global optimization routine with local search methods (Nelder Mead). A special thanks for Tomas [https://tomasrm.github.io/](https://tomasrm.github.io/) for providing his codes in Julia of his paper on [Trade Shocks and Higher-Order Earnings Risk in Local
+- **Income Process Calibration**: Contains a set of files for calibrating a Continuous-time income process with micro data using an adaptation of [(Guvenen et al. 2021)](https://static1.squarespace.com/static/6246570e617f1d3daf55e1c1/t/628e6309b2e01e636b2ee9b3/1653498634356/guvenen-karahan-ozkan-song-econometrica-2021.pdf) parallelizable global optimization routine with local search methods (Nelder-Mead). A special thanks for Tomas [https://tomasrm.github.io/](https://tomasrm.github.io/) for providing his codes in Julia of his paper on [Trade Shocks and Higher-Order Earnings Risk in Local
 Labor Markets](https://tomasrm.github.io/assets/files/MartinezMello_trade_risk.pdf), over which I adapted to Matlab
 
 
