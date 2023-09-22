@@ -14,13 +14,13 @@
 function sim_moments = moments(yannsim,settings)
 
 nsim = settings.n_sim;          % Number of income path simulations
-
+t=0;
 
 % central moments: logs
-muy = sum(yannsim(:,1))/nsim;
-mu2y = sum((yannsim(:,1)-muy).^2)/nsim;
-mu3y = sum((yannsim(:,1)-muy).^3)/nsim;
-mu4y = sum((yannsim(:,1)-muy).^4)/nsim;
+muy = sum(yannsim(:,1+t))/nsim;
+mu2y = sum((yannsim(:,1+t)-muy).^2)/nsim;
+mu3y = sum((yannsim(:,1+t)-muy).^3)/nsim;
+mu4y = sum((yannsim(:,1+t)-muy).^4)/nsim;
 
 % standardised moments: logs
 if mu2y > 0
@@ -32,10 +32,10 @@ else
 end
 
 % central moments: 1 year log changes
-mudy1 = sum(yannsim(:,2)-yannsim(:,1))/nsim;
-mu2dy1 = sum((yannsim(:,2)-yannsim(:,1)-mudy1).^2)/nsim;
-mu3dy1 = sum((yannsim(:,2)-yannsim(:,1)-mudy1).^3)/nsim;
-mu4dy1 = sum((yannsim(:,2)-yannsim(:,1)-mudy1).^4)/nsim;
+mudy1 = sum(yannsim(:,t+2)-yannsim(:,t+1))/nsim;
+mu2dy1 = sum((yannsim(:,t+2)-yannsim(:,t+1)-mudy1).^2)/nsim;
+mu3dy1 = sum((yannsim(:,t+2)-yannsim(:,t+1)-mudy1).^3)/nsim;
+mu4dy1 = sum((yannsim(:,t+2)-yannsim(:,t+1)-mudy1).^4)/nsim;
 
 kurtdy1 = mu4dy1/(mu2dy1^2);
 
@@ -49,10 +49,10 @@ gam4dy1 = 0;
 end
 
 % central moments: 5 year log changes
-mudy5 = sum(yannsim(:,5)-yannsim(:,1))/nsim;
-mu2dy5 = sum((yannsim(:,5)-yannsim(:,1)-mudy5).^2)/nsim;
-mu3dy5 = sum((yannsim(:,5)-yannsim(:,1)-mudy5).^3)/nsim;
-mu4dy5 = sum((yannsim(:,5)-yannsim(:,1)-mudy5).^4)/nsim;
+mudy5 = sum(yannsim(:,t+5)-yannsim(:,t+1))/nsim;
+mu2dy5 = sum((yannsim(:,t+5)-yannsim(:,t+1)-mudy5).^2)/nsim;
+mu3dy5 = sum((yannsim(:,t+5)-yannsim(:,t+1)-mudy5).^3)/nsim;
+mu4dy5 = sum((yannsim(:,t+5)-yannsim(:,t+1)-mudy5).^4)/nsim;
 
 kurtdy5 = mu4dy5/(mu2dy5^2);
 
@@ -66,13 +66,17 @@ gam4dy5 = 0;
 end
 
 % P5010 and P9050 of the 1 and 5 year log change
-pct_1yr_change = prctile(yannsim(:,2)-yannsim(:,1),[10,50,90]);
-pct_5yr_change = prctile(yannsim(:,5)-yannsim(:,1),[10,50,90]);
+pct_1yr_change = prctile(yannsim(:,t+2)-yannsim(:,t+1),[10,50,90]);
+pct_5yr_change = prctile(yannsim(:,t+5)-yannsim(:,t+1),[10,50,90]);
 
-P9050_1yr_change = pct_1yr_change(3) - pct_1yr_change(2);
-P9050_5yr_change = pct_5yr_change(3) - pct_5yr_change(2);
-P5010_1yr_change = pct_1yr_change(2) - pct_1yr_change(1);
-P5010_5yr_change = pct_5yr_change(2) - pct_5yr_change(1);
+% P9050_1yr_change = pct_1yr_change(3) - pct_1yr_change(2);
+% P9050_5yr_change = pct_5yr_change(3) - pct_5yr_change(2);
+% P5010_1yr_change = pct_1yr_change(2) - pct_1yr_change(1);
+% P5010_5yr_change = pct_5yr_change(2) - pct_5yr_change(1);
+
+P9010_1yr_change = pct_1yr_change(3) - pct_1yr_change(1);
+P9010_5yr_change = pct_5yr_change(3) - pct_5yr_change(1);
+
 
 % fraction 1 year log changes in ranges
 % fracdy1less5 = sum(abs(yannsim(:,2)-yannsim(:,1)) < 0.05)/double(nsim);
@@ -87,9 +91,10 @@ sim_moments.std_1yr_log_change = sqrt(mu2dy1);
 sim_moments.std_5yr_log_change = sqrt(mu2dy5);
 sim_moments.kurt_1yr_log_change = kurtdy1;
 sim_moments.kurt_5yr_log_change = kurtdy5;
-sim_moments.P9050_1yr_change = P9050_1yr_change;
-sim_moments.P9050_5yr_change = P9050_5yr_change;
-sim_moments.P5010_1yr_change = P5010_1yr_change;
-sim_moments.P5010_5yr_change = P5010_5yr_change;
-
+% sim_moments.P9050_1yr_change = P9050_1yr_change;
+% sim_moments.P9050_5yr_change = P9050_5yr_change;
+% sim_moments.P5010_1yr_change = P5010_1yr_change;
+% sim_moments.P5010_5yr_change = P5010_5yr_change;
+sim_moments.P9010_1yr_log_change = P9010_1yr_change;
+sim_moments.P9050_1yr_log_change = P9010_5yr_change;
 end
