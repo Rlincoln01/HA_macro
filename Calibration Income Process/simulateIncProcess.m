@@ -95,6 +95,13 @@ try
             psimI(in,it) = gendist(p_trans(psimI(in,it-1),:),1,1,p_rand(in,it));
             ysim(in,it) = t_grid(tsimI(in,it)) + p_grid(psimI(in,it));
         end
+        %aggregate to annual income
+        ylevsim(in,:) = exp(ysim(in,:));
+        for it = 1:5
+            % yannlevsim(in,it) = sum(ylevsim(in,cumtvec>(it-1) & cumtvec<=it));
+            yannlevsim(in,it) = sum(ylevsim(in,cumtvec>4.0*(it-1) & cumtvec<=4.0*it));
+        end
+        yannsim(in,:) = log(yannlevsim(in,:));
     end
 catch
     warning("Ill-behaved parameters generate singular matrix that cannot compute stationary distribution." + ...
@@ -104,16 +111,16 @@ catch
     tsimI = 2.*ones(nsim,Tsim);
     psimI = 6.*ones(nsim,Tsim);
     ysim = t_grid(tsimI) + p_grid(psimI);
-end
+    %aggregate to annual income
+    ylevsim(in,:) = exp(ysim(in,:));
 
-%aggregate to annual income
-ylevsim(in,:) = exp(ysim(in,:));
-for it = 1:5
-    % yannlevsim(in,it) = sum(ylevsim(in,cumtvec>(it-1) & cumtvec<=it));
-    yannlevsim(in,it) = sum(ylevsim(in,cumtvec>4.0*(it-1) & cumtvec<=4.0*it));
-end
-yannsim(in,:) = log(yannlevsim(in,:));
-
+    for in=1:nsim
+        for it = 1:5
+            % yannlevsim(in,it) = sum(ylevsim(in,cumtvec>(it-1) & cumtvec<=it));
+            yannlevsim(in,it) = sum(ylevsim(in,cumtvec>4.0*(it-1) & cumtvec<=4.0*it));
+        end
+        yannsim(in,:) = log(yannlevsim(in,:));
+    end
 end
 
 
