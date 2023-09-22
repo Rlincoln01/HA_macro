@@ -28,6 +28,10 @@ W = eye(n_f);
 % loss function
 loss = F'*W*F;
 
+if isnan(loss)
+    loss = 10^6;
+end
+
 end
 
 

@@ -78,29 +78,42 @@ tsimI = zeros(nsim,Tsim); % transitory income (log,qtr)
 psimI = zeros(nsim,Tsim); % persistent income (log,qtr)
 ysim = zeros(nsim,Tsim); % sum of both (log,qtr)
 ylevsim = zeros(nsim,Tsim); % sum of both (levels,qtr)
-yannlevsim = zeros(nsim,Tsim); % sum of both (levels,yr)
-yannsim = zeros(nsim,Tsim); % sum of both (log,yr)
+yannlevsim = zeros(nsim,n_years); % sum of both (levels,yr)
+yannsim = zeros(nsim,n_years); % sum of both (log,yr)
 
-for in=1:nsim
-     % Simulate income path in dt increments
-     % First shocks are drawn from the stationary distribution
-     tsimI(in,1) = gendist(t_dist',1,1,t_rand(in,1));
-     psimI(in,1) = gendist(p_dist',1,1,p_rand(in,1));
-     ysim(in,1) = t_grid(tsimI(in,1)) + p_grid(psimI(in,1));
+try
+    for in=1:nsim
+        % Simulate income path in dt increments
+        % First shocks are drawn from the stationary distribution
+        tsimI(in,1) = gendist(t_dist',1,1,t_rand(in,1));
+        psimI(in,1) = gendist(p_dist',1,1,p_rand(in,1));
+        ysim(in,1) = t_grid(tsimI(in,1)) + p_grid(psimI(in,1));
 
-    for it = 2:Tsim
-        % now, take shocks and simulate next period using transition matrix
-        tsimI(in,it) = gendist(t_trans(tsimI(in,it-1),:),1,1,t_rand(in,it));
-        psimI(in,it) = gendist(p_trans(psimI(in,it-1),:),1,1,p_rand(in,it));
-        ysim(in,it) = t_grid(tsimI(in,it)) + p_grid(psimI(in,it));
+        for it = 2:Tsim
+            % now, take shocks and simulate next period using transition matrix
+            tsimI(in,it) = gendist(t_trans(tsimI(in,it-1),:),1,1,t_rand(in,it));
+            psimI(in,it) = gendist(p_trans(psimI(in,it-1),:),1,1,p_rand(in,it));
+            ysim(in,it) = t_grid(tsimI(in,it)) + p_grid(psimI(in,it));
+        end
     end
+catch
+    warning("Ill-behaved parameters generate singular matrix that cannot compute stationary distribution." + ...
+        "Generating simulation that delivers ill-behaved moments delivering big loss and not affecting algorithm")
 
-    %aggregate to annual income
-    ylevsim(in,:) = exp(ysim(in,:));
-    for it = 1:5
-        yannlevsim(in,it) = sum(ylevsim(in,cumtvec>4.0*(it-1) & cumtvec<=4.0*it));
-    end
-    yannsim(in,:) = log(yannlevsim(in,:));
+    % Generating "simulation" that delivers ill-behaved moments
+    tsimI = 2.*ones(nsim,Tsim);
+    psimI = 6.*ones(nsim,Tsim);
+    ysim = t_grid(tsimI) + p_grid(psimI);
 end
 
+%aggregate to annual income
+ylevsim(in,:) = exp(ysim(in,:));
+for it = 1:5
+    % yannlevsim(in,it) = sum(ylevsim(in,cumtvec>(it-1) & cumtvec<=it));
+    yannlevsim(in,it) = sum(ylevsim(in,cumtvec>4.0*(it-1) & cumtvec<=4.0*it));
 end
+yannsim(in,:) = log(yannlevsim(in,:));
+
+end
+
+
