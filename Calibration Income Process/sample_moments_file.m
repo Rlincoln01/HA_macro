@@ -12,10 +12,8 @@ sample_moments.BRA.std_1yr_log_change = 0.682;
 sample_moments.BRA.std_5yr_log_change = 0.825;
 sample_moments.BRA.kurt_1yr_log_change = 8.535;
 sample_moments.BRA.kurt_5yr_log_change = 6.347;
-sample_moments.BRA.P9050_1yr_change = 0.614;
-sample_moments.BRA.P9050_5yr_change = 0.845;
-sample_moments.BRA.P5010_1yr_change = 0.708;
-sample_moments.BRA.P5010_5yr_change = 0.943;
+sample_moments.BRA.P9010_1yr_change = 1.324;
+sample_moments.BRA.P9010_5yr_change = 1.789;
 
 % Argentina - o mais PEBBA de todos
 
@@ -24,10 +22,8 @@ sample_moments.ARG.std_1yr_log_change = 0.662;
 sample_moments.ARG.std_5yr_log_change = 0.824;
 sample_moments.ARG.kurt_1yr_log_change = 10.472;
 sample_moments.ARG.kurt_5yr_log_change = 7.262;
-sample_moments.ARG.P9050_1yr_change = 0.517;
-sample_moments.ARG.P9050_5yr_change = 0.855;
-sample_moments.ARG.P5010_1yr_change = 0.512;
-sample_moments.ARG.P5010_5yr_change = 0.814;
+sample_moments.ARG.P9010_1yr_change = 1.324;
+sample_moments.ARG.P9010_5yr_change = 1.789;
 
 % Canada
 
