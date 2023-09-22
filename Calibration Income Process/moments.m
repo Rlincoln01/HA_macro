@@ -96,5 +96,5 @@ sim_moments.kurt_5yr_log_change = kurtdy5;
 % sim_moments.P5010_1yr_change = P5010_1yr_change;
 % sim_moments.P5010_5yr_change = P5010_5yr_change;
 sim_moments.P9010_1yr_log_change = P9010_1yr_change;
-sim_moments.P9010_1yr_log_change = P9010_5yr_change;
+sim_moments.P9010_5yr_log_change = P9010_5yr_change;
 end
