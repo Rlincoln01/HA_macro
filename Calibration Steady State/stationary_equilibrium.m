@@ -14,7 +14,7 @@
 % - Model Specification:
 %   • Open Economy
 %   • Individual Fixed affects
-%   • Duscount rate heterogeneity 
+%   • Discount rate heterogeneity 
 %
 % Outputs: Equilibrium objects of the economy
 % - Aggregate variables: Y,C,S,K,L,lump_sum
@@ -26,23 +26,25 @@
 function ss = stationary_equilibrium(calibration,parameters,specification,a_grid)
 
 % options
-display_iterations = 1;
+display_iterations = 0;
 
 %% ============== 0 step) Define Parameters =========================== %%
 
-% 1.1 - Calibration
 rho = calibration(1);
 delta_rho = calibration(2);
 tau = calibration(3);
 borrowing_limit = calibration(4);
 
-% 1.2 - Parametrization
+% 1.1 - Calibration/Parametrization
 alpha = parameters.alpha;
 r_open_econ = parameters.r_open_econ;
 dep = parameters.dep;
 n_p = parameters.n_p;
 n_t = parameters.n_t;
+n_fe = parameters.n_fe;
+sigma_omega = parameters.sigma_omega;
 n_rho = parameters.n_rho;
+
 
 % Asset grid
 n_a = length(a_grid);

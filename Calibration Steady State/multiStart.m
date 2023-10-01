@@ -41,14 +41,21 @@ function [bestsol, allsol] = multiStart(f, algSettings)
     fprintf('Starting first stage of Multistart\n');
     start_time = tic;
     objec_val = zeros(1, algSettings.n_multi);
+    WaitMessage = parfor_wait(algSettings.n_multi, 'Waitbar', true);
     parfor j = 1:algSettings.n_multi
+        WaitMessage.Send;
         objec_val(j) = f(guesses(j,:)); 
     end
+    %Destroy the object. 
+    WaitMessage.Destroy
     timeM = toc(start_time);
 
     [~, index] = sort(objec_val); % Select index of best guesses based on objective
     opt_guess = guesses(index(1:select),:); % Select optimal guesses
     fprintf('First stage done in %1.2f minutes.\n', timeM / 60);
+
+    % Save output of the first stage
+    save("estimation_output\first_stage_global_est.mat","guesses","objec_val","opt_guesses")
 
     fprintf('\nStarting second stage of Multistart\n');
     start_time = tic;

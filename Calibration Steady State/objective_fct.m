@@ -24,41 +24,14 @@ if penalty == 0
     a_grid = asset_grid(borrowing_limit,parameters);
     % Compute Steady State Equilibrium
     ss = stationary_equilibrium(calibration,parameters,specification,a_grid);
-    % retrieve equilibrium objects
+
+    % retrieve equilibrium objects for sanity checks
     K = ss.capital;
     Y = ss.output;
-    T = ss.lump_sum;
     C = ss.consumption;
-    w_eq = ss.wage;
-    g_final = ss.joint_dist;
-    a_marg_dist = ss.wealth_dist;
     r_eq = ss.interest;
 
-    % Target wealth-income ratio
-    wealth_income_ratio = K/Y;
-
-    % Target Cash transfers as share of gdp
-    transfers_to_gdp = T/Y;
-
-    % obtain income dist
-    % productivity grid
-    [~,z_grid] = inc_matrix(parameters);
-
-    % other moments of the wealth distribution
-    [~,debt_to_gdp,~,wealth_shares,~,~] = wealth_stats(a_marg_dist, ...
-        a_grid,z_grid, ...
-        Y,"Quintiles",...
-        g_final,w_eq,T);
-    
-    % store simulated moments
-    sim_moments.wealth_income_ratio = wealth_income_ratio;
-    sim_moments.debt_to_gdp = 100*debt_to_gdp;
-    sim_moments.transfers_to_gdp = 100*transfers_to_gdp;
-    sim_moments.p0p20 = wealth_shares(1);
-    sim_moments.p20p40 = wealth_shares(2);
-    sim_moments.p40p60 = wealth_shares(3);
-    sim_moments.p60p80 = wealth_shares(4);
-    sim_moments.p80p100 = wealth_shares(5);
+    sim_moments = Moments(ss,parameters,a_grid);
 
     if (r_eq <= 0) || (C>Y) || (K <= 0) 
         loss = 10e6;
@@ -92,7 +65,10 @@ end
 
 function asset_grid = asset_grid(borrowing_limit,parameters)
     % Asset grid
-    a_grid = power_grid(borrowing_limit,parameters.amax,parameters.n_a);
-    a_append = linspace(parameters.amin,borrowing_limit,parameters.n_add)';
-    asset_grid = [a_append(1:parameters.n_add-1); a_grid];
+    I = 100;                            % # of points in the asset grid
+    a_grid = power_grid(borrowing_limit,parameters.amax,I);
+    n_add = parameters.n_add;
+    bl_after = parameters.amin;
+    a_append = linspace(bl_after,borrowing_limit,n_add)';
+    asset_grid = [a_append(1:n_add-1); a_grid];
 end

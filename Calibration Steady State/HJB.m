@@ -24,7 +24,6 @@ display_iterations = 0;
 % parameters and calibration
 gamma = parameters.gamma;
 
-
 %=========================================================================
 %                 1)  Income Process and asset grid
 %=========================================================================

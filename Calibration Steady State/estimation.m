@@ -49,7 +49,7 @@ function [par_sol, nfeval] = estimation(parameters,settings,specification,sample
     elseif settings.algorithm == 2
         % Perform optimization using Nelder-Mead simplex algorithm
         [opt_res,~,~,output] = fminsearch(f, initial_guess, optimset('PlotFcns','optimplotfval','TolX', 1e-3, 'TolFun', 1e-3, ...
-            'MaxFunEvals', 5000, 'MaxIter', 2000, 'Display', 'off'));
+            'MaxFunEvals', 5000, 'MaxIter', 2000, 'Display', 'iter'));
         
         disp(output.message)
 
