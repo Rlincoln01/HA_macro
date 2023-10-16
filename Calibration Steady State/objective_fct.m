@@ -20,7 +20,7 @@ penalty = penalty_fct(calibration,settings); %function checks whether param boun
 % solve for the SS and compute moments
 if penalty == 0
     % Call asset grid based on borrowing limit
-    borrowing_limit = calibration(4);
+    borrowing_limit = calibration(5);
     a_grid = asset_grid(borrowing_limit,parameters);
     % Compute Steady State Equilibrium
     ss = stationary_equilibrium(calibration,parameters,specification,a_grid);
@@ -36,7 +36,8 @@ if penalty == 0
     if (r_eq <= 0) || (C>Y) || (K <= 0) 
         loss = 10e6;
     else 
-        loss = loss_fct(sample_moments,sim_moments);
+        weights = settings.weights;
+        loss = loss_fct(sample_moments,sim_moments,weights);
     end
 else
     loss = 10e6;

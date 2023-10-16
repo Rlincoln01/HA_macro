@@ -100,7 +100,7 @@ for n=1:maxit
 
     % == 3rd) Check if it is a transition matrix (sum(row) = 1, for all rows)
     if max(abs(sum(L,2)))>10^(-9)
-        disp('Improper Transition Matrix')
+        % disp('Improper Transition Matrix')
         break
     end    
 

@@ -41,21 +41,23 @@ function [bestsol, allsol] = multiStart(f, algSettings)
     fprintf('Starting first stage of Multistart\n');
     start_time = tic;
     objec_val = zeros(1, algSettings.n_multi);
-    WaitMessage = parfor_wait(algSettings.n_multi, 'Waitbar', true);
+    % WaitMessage = parfor_wait(algSettings.n_multi, 'Waitbar', true);
     parfor j = 1:algSettings.n_multi
-        WaitMessage.Send;
+        % WaitMessage.Send;
         objec_val(j) = f(guesses(j,:)); 
     end
     %Destroy the object. 
-    WaitMessage.Destroy
+    % WaitMessage.Destroy
     timeM = toc(start_time);
 
     [~, index] = sort(objec_val); % Select index of best guesses based on objective
     opt_guess = guesses(index(1:select),:); % Select optimal guesses
     fprintf('First stage done in %1.2f minutes.\n', timeM / 60);
 
+    guesses_and_loss = [objec_val',guesses];
+
     % Save output of the first stage
-    save("estimation_output\first_stage_global_est.mat","guesses","objec_val","opt_guesses")
+    save("estimation_output\first_stage_global_est.mat","guesses_and_loss","opt_guess")
 
     fprintf('\nStarting second stage of Multistart\n');
     start_time = tic;
@@ -66,8 +68,8 @@ function [bestsol, allsol] = multiStart(f, algSettings)
 
     parfor i = 1:select
         fprintf('Multistart iteration: %d\n', i);
-        [opt_res,fval,~,output] = fminsearch(f, opt_guess(i,:), optimset('TolX', 1e-6, 'TolFun', 1e-3, ...
-            'MaxFunEvals', 500, 'MaxIter', 200, 'Display', 'off'));
+        [opt_res,fval,~,output] = fminsearch(f, opt_guess(i,:), optimset('TolX', 1e-3, 'TolFun', 1e-3, ...
+            'MaxFunEvals', 200, 'MaxIter', 100, 'Display', 'off'));
         nfeval(i) = output.iterations;
         par_sol(:, i) = opt_res;
         fvals(i) = fval;

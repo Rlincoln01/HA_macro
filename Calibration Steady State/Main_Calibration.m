@@ -13,12 +13,25 @@
 
 % =================== Settings of the calibration ======================= % 
 
-settings.algorithm = 1;                        % Algorithm chosen. if 1, global. If 2, local search
-settings.multishare = 0.05;                    % use x % of the guesses on 2nd stage
-settings.n_multi = 1000;                      % total number of guesses
-% order: rho, delta_rho, tau, borrowing_limit
-settings.guess_min = [0.01,1e-4,0,-4.5];          % lower boundaries for global search algorithm
-settings.guess_max = [0.10,1e-2,0.5,0];          % upper boundaries for global search algorithm
+settings.algorithm = 1;                                     % Algorithm chosen. if 1, global. If 2, local search
+settings.multishare = 0.05;                                 % use x % of the guesses on 2nd stage
+settings.n_multi = 1000;                                    % total number of guesses
+% order: rho, delta_rho_1,delta_rho_2, tau, borrowing_limit
+settings.guess_min = [0.01,1e-4,1e-4,0,-4.5];                    % lower boundaries for global search algorithm
+settings.guess_max = [0.10,1e-2,1e-2,0.5,-1];                     % upper boundaries for global search algorithm
+settings.weights = [1/4 1/4 1/4 1/10 0 1/20 1/20 1/20];  % Weights for the loss function (must sum up to 1)
+
+% Notes on the chosen weights for the weighting matrix:
+% - P20P40: weight is zero as this kind of model with unsecured debt makes
+%   it impossible to match this quintile properly. (0)
+% - P0P20: Assign higher weight as it this quintile concentrates the higher
+%   share of wealthy HtM and inidividuals with higher MPCs, important for
+%   the PE effect of the credit shock (double of the the other three
+%   remaining) (2/5 x 1/4 = 1/10) 
+% - P40P60, P60P80, P80P100: Weights are non-negative, as these moments are
+%   important. However, less important than the first moment which has
+%   double the weight (1/20)
+
 
 % ======================= Model Specification =========================== %
 
@@ -35,7 +48,7 @@ parameters.r_open_econ = 0.03;                 % Open-economy interest rate
 parameters.n_rho = 5;                          % # of points on the discount rate grid
 parameters.n_fe = 3;                           % # of points in the FE grid
 parameters.N_t = 300;                          % # of points in the time grid
-parameters.T = 75;                             % termination period of the time grid    
+parameters.T = 75;                             % termination period of the time grid 
 
 % Income process calibration for Brazil
 parameters.gamma = 1;                          % Relative risk aversion
@@ -55,8 +68,8 @@ parameters.amin = -5;                          % minimum absolute value
 parameters.amax = 600;                         % Maximum asset value
 parameters.n_add = 21;                         % number of gridpoints to add after the borrowing limit
 
-calibration = [0.0852,0.0003,0.1341,-3];
-borrowing_limit = calibration(4);
+% calibration = [0.0852,0.0003,0.1341,-3];
+% borrowing_limit = calibration(4);
 
 % ============================ Asset grid =============================== %
 
@@ -92,20 +105,32 @@ for i =1:n_f
 end
 
 % Test with local search
-% initial_guess = [0.05,0.005,0.15,-1.5];
+
 % settings.algorithm = 2;
-% [par_sol, nfeval] = estimation(parameters,settings,specification,sample_moments,country,initial_guess);
-% 
+% [par_sol, nfeval] = estimation(parameters,settings,specification,sample_moments,country,calibration);
 
 [par_sol, nfeval] = estimation(parameters,settings,specification,sample_moments,country);
 
+% 
+% calibration = [0.0546,0.0001,0.1677,-0.7463];
+% 
+% tic;
+% loss = objective_fct(calibration,parameters,specification,settings,sample_moments);
+% toc;
+% 
 
-calibration = [0.0546,0.0001,0.1677,-0.7463];
+calibration = [0.0810,0.005,0.005,0.2194,-1.6764];
 
-tic;
-loss = objective_fct(calibration,parameters,specification,settings,sample_moments);
-toc;
+calibration = allsol.par_sol(:,5);
 
 ss = stationary_equilibrium(calibration,parameters,specification,a_grid);
 
 sim_moments = Moments(ss,parameters,a_grid);
+
+[loss,decomp] = loss_fct(sample_moments,sim_moments,settings.weights);
+
+
+
+
+
+

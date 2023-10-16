@@ -39,10 +39,10 @@ transfers_to_gdp = T/Y;
 sim_moments.wealth_income_ratio = wealth_income_ratio;
 sim_moments.debt_to_gdp = 100*debt_to_gdp;
 sim_moments.transfers_to_gdp = 100*transfers_to_gdp;
-sim_moments.p0p20 = wealth_shares(1);
-sim_moments.p20p40 = wealth_shares(2);
-sim_moments.p40p60 = wealth_shares(3);
-sim_moments.p60p80 = wealth_shares(4);
-sim_moments.p80p100 = wealth_shares(5);
+sim_moments.p0p20 = 100*wealth_shares(1);
+sim_moments.p20p40 = 100*wealth_shares(2);
+sim_moments.p40p60 = 100*wealth_shares(3);
+sim_moments.p60p80 = 100*wealth_shares(4);
+sim_moments.p80p100 = 100*wealth_shares(5);
 
 end
