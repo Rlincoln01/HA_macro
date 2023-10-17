@@ -16,11 +16,23 @@ tau = parameters.tau;
 n_p = parameters.n_p;
 n_t = parameters.n_t;
 n_rho = parameters.n_rho;
-delta_rho = parameters.delta_rho;
+delta_rho_1 = parameters.delta_rho_1;
+delta_rho_2 = parameters.delta_rho_2;
 gamma = parameters.gamma;
 
 % options
 display_iterations = 0;
+
+% If there is discount rate heterogeneity, then calculate all discount rates
+if specification.disc_rate_heterogeneity ==1
+    rho_s = zeros(5,1);
+    dist_max = delta_rho_1 + delta_rho_2;
+    rho_s(1) = rho - dist_max;
+    rho_s(5) = rho + dist_max;
+    rho_s(2) = rho - delta_rho_1;
+    rho_s(4) = rho + delta_rho_1;
+    rho_s(3) = rho;
+end
 
 
 
@@ -75,10 +87,11 @@ delta = 1000;       % Time Step
 
 
 if specification.disc_rate_heterogeneity == 1
-MPCs_windfall = zeros(n_a,n_z,n_rho);    
+MPCs_windfall = zeros(n_a,n_z,n_rho);        
     for j=1:n_rho
+        disp("Solving Feynman-Kac equation for individual: " + j)
         % preallocation
-        rho_j = rho + (j-3)*delta_rho;
+        rho_j = rho_s(j);
         % intial guess value function
         v0 = u(max(exp(1)^(-10),lump_sum + r.*aa + (1-tau)*w.*exp(omega + zz)))./rho_j;
         % set v as initial guess

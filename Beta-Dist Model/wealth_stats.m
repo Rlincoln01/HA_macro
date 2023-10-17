@@ -113,7 +113,7 @@ zz = ones(n_a,1)*z_grid';                 % Matrix IxM of productivity
 aa = a_grid*ones(1,n_z);                  % Matrix IxM of assets
 
 % obtain the matrix of quarterly income of households
-yy = (w.*exp(zz)+ lump_sum)/4;
+yy = (w.*exp(zz)+ lump_sum);
 
 % which households are HtM?
 HtM_map = aa < yy./2;

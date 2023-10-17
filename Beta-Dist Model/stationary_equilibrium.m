@@ -14,7 +14,7 @@
 % - Model Specification:
 %   • Open Economy
 %   • Individual Fixed affects
-%   • Duscount rate heterogeneity (to include)
+%   • Duscount rate heterogeneity 
 %
 % Outputs: Equilibrium objects of the economy
 % - Aggregate variables: Y,C,S,K,L,lump_sum
@@ -23,10 +23,10 @@
 %
 %=========================================================================
 
-function [Y,C,S,K_eq,L,lump_sum,r_eq,w_eq,g_final,a_marg_dist] = ...
-    stationary_equilibrium(parameters,specification,a_grid,borrowing_limit)
+function ss = stationary_equilibrium(parameters,specification,a_grid,borrowing_limit)
 
-
+% options
+display_iterations = 1;
 
 %% ============== 0 step) Define Parameters =========================== %%
 
@@ -41,7 +41,8 @@ n_t = parameters.n_t;
 n_fe = parameters.n_fe;
 sigma_omega = parameters.sigma_omega;
 n_rho = parameters.n_rho;
-delta_rho = parameters.delta_rho;
+delta_rho_1 = parameters.delta_rho_1;
+delta_rho_2 = parameters.delta_rho_2;
 
 
 % Asset grid
@@ -68,6 +69,19 @@ if specification.ind_fixed_effects == 0
 else
     Labor = sum(exp(omega_grid').*omega_dist.*domega_tilde)*sum(exp(zgrid).*z_dist.*dz_tilde);
 end
+
+% If there is discount rate heterogeneity, then calculate all discount rates
+if specification.disc_rate_heterogeneity ==1
+    rho_s = zeros(5,1);
+    dist_max = delta_rho_1 + delta_rho_2;
+    rho_s(1) = rho - dist_max;
+    rho_s(5) = rho + dist_max;
+    rho_s(2) = rho - delta_rho_1;
+    rho_s(4) = rho + delta_rho_1;
+    rho_s(3) = rho;
+end
+
+
 
 % Do bisection method if closed economy
 %=========================================================================
@@ -101,7 +115,7 @@ if specification.closed_economy == 1
             g_dist = zeros(n_a,n_z,n_rho);
             con_dist = zeros(n_a,n_z,n_rho);
             for j=1:n_rho
-                rho_j = rho + (j-3)*delta_rho;
+                rho_j = rho_s(j);
                 if specification.ind_fixed_effects == 0
                     [g_dist(:,:,j),con_dist(:,:,j)] = HJB(parameters,0,a_grid, ...
                         borrowing_limit,r_iter, ...
@@ -178,7 +192,7 @@ if specification.closed_economy == 1
 
         cdiff = abs(min_supply_excess-max_demand_excess);
         K_diff = K_d - K_s;
-        if mod((iter+1),5) == 0
+        if (mod((iter+1),5) == 0) && display_iterations == 1
             disp("Iteration # " + (iter+1) + " - r: " + r_iter + " - Diff: " + cdiff + " given Kdiff: " + K_diff);
         end    
     
@@ -248,7 +262,17 @@ w_eq = w;
 % equilibrium density already determined in loop
 a_marg_dist = g_final*dz_tilde; % marginal distribution of wealth
 
-
+% 4) Store as a struct object
+ss.output = Y;
+ss.consumption = C;
+ss.investment = S;
+ss.labor = L;
+ss.capital = K_eq;
+ss.wage = w_eq;
+ss.interest = r_eq;
+ss.lump_sum = lump_sum;
+ss.joint_dist = g_final;
+ss.wealth_dist = a_marg_dist;
 
 end
 

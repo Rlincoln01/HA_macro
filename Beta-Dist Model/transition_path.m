@@ -7,8 +7,7 @@
 %
 %=========================================================================
 
-function [Y_t,C_t,I_t,K_t,gg_t,a_marg_t,r_t,w_t,lump_sum_t] = transition_path(...
-    parameters,specification,a_grid,bl_path)
+function transition_allocation = transition_path(parameters,specification,a_grid,bl_path)
 
 % Calibration
 alpha = parameters.alpha;
@@ -24,7 +23,8 @@ rho = parameters.rho;
 n_p = parameters.n_p;
 n_t = parameters.n_t;
 n_rho = parameters.n_rho;
-delta_rho = parameters.delta_rho;
+delta_rho_1 = parameters.delta_rho_1;
+delta_rho_2 = parameters.delta_rho_2;
 n_z = n_p*n_t;
 
 % Income process CTMC matrix + grid
@@ -43,9 +43,9 @@ Lambda_z = Build_Lambda_matrix(lambda_z,n_z,N_a);
 
 
 % Time grid
-N_t = 300; % Final period - by this time, the system should've converged to the new SS
-T = 75;
-dt = T/N_t;
+N_t = parameters.N_t; % Final period - by this time, the system should've converged to the new SS
+T = parameters.T;
+dt = T/N_t; % dt (time step) = quarter in the model
 
 
 % ===============================================================
@@ -56,50 +56,63 @@ dt = T/N_t;
 % ===============================================================
 
 % 1.1 - Initial Stationary Equilibrium => initial density
-[~,C_ini,~,K_ini,L_ini,~,r_ini,~,g_ini,a_marg_dist_ini] = stationary_equilibrium(parameters,specification,a_grid, ...
+iniSS = stationary_equilibrium(parameters,specification,a_grid, ...
     bl_path(1));
 
 % 1.2 - Final stationary equilibrium
-[~,~,~,K_fin,L_fin,lump_sum_fin,r_fin,w_fin,~,~] = stationary_equilibrium(parameters,specification,a_grid, ...
+finSS = stationary_equilibrium(parameters,specification,a_grid, ...
     bl_path(N_t));
+
+% If there is discount rate heterogeneity, then calculate all discount rates
+if specification.disc_rate_heterogeneity ==1
+    rho_s = zeros(5,1);
+    dist_max = delta_rho_1 + delta_rho_2;
+    rho_s(1) = rho - dist_max;
+    rho_s(5) = rho + dist_max;
+    rho_s(2) = rho - delta_rho_1;
+    rho_s(4) = rho + delta_rho_1;
+    rho_s(3) = rho;
+end
 
 % 1.3 - Terminal condition for the value function, for each discount rate (if appicable):
 if specification.disc_rate_heterogeneity == 1
     V_t_rhos = zeros(N_a,n_z,n_rho);
     for j =1:n_rho
-        rho_j = rho + (j-3)*delta_rho;
+        rho_j = rho_s(j);
         [~,~,~,V_t_rhos(:,:,j)] = HJB(parameters,0,a_grid, ...
-        bl_path(N_t),r_fin,w_fin,lump_sum_fin,rho_j);
+        bl_path(N_t),finSS.interest,finSS.wage,finSS.lump_sum,rho_j);
     end
 else
-    [~,~,~,V_fin] = HJB(parameters,0,a_grid, ...
-        bl_path(N_t),r_fin,w_fin,lump_sum_fin);
+    [~,~,~,V_T] = HJB(parameters,0,a_grid, ...
+        bl_path(N_t),finSS.interest,finSS.wage,finSS.lump_sum);
 end
+
+
 
 % ===================================================================
 % 2nd step - Guess path for capital in the transition path
 % ===================================================================
 
-L = (L_ini + L_fin)/2; % Labor = ergodic dist of z
-K_t = linspace(K_ini,K_fin,N_t); % Intial guess for the path of capital
+L = (iniSS.labor + finSS.labor)/2; % Labor = ergodic dist of z
+K_t = linspace(iniSS.capital,finSS.capital,N_t); % Intial guess for the path of capital
 K_new=K_t;       %This is just preallocation. The values will not be used.
 
 % ====================================================================
 % 3rd step - Solve time-dep. HJB given path of prices + terminal cond.
 % ====================================================================
 
-% preallocation
-C_t = zeros(N_t,1); % aggregate consumption
 
 % Loop parameters
 maxit = 1000;
-convergence_criterion = 10^(-5);
+convergence_criterion = 10^(-3);
 relax= 0.5;
 
 if specification.disc_rate_heterogeneity == 1
 K_new = zeros(N_t,n_rho);
 marginal_dists = zeros(N_a,N_t,n_rho);
 gg_t = zeros(N_a,n_z,N_t,n_rho);
+% preallocation
+C_t = zeros(N_t,n_rho); % aggregate consumption
     for it = 1:maxit
         fprintf('ITERATION = %d\n',it);
         % Guessing path for prices given path of capital
@@ -108,16 +121,16 @@ gg_t = zeros(N_a,n_z,N_t,n_rho);
         lump_sum_t = tau*w_t*L;
         for j=1:n_rho
             fprintf("Calculating for individual %1.0f \n",j)
-            rho_j = rho + (j-3)*delta_rho;
+            rho_j = rho_s(j);
             [L_t,con_t] = vfi_time(r_t,w_t,lump_sum_t,0,V_t_rhos(:,:,j),Lambda_z,a_grid,z_grid,N_t, ...
                 bl_path,dt,parameters,rho_j);
-            gg = KF_time(g_ini,L_t,N_a,n_z,N_t,dt,grid_diag);
+            gg = KF_time(iniSS.joint_dist,L_t,N_a,n_z,N_t,dt,grid_diag);
             for n = 1:N_t
                 if n == 1
-                    K_new(n,j) = K_ini; % Initial Capital
-                    C_t(1,j) = C_ini; % Initial Consumption
-                    marginal_dists(:,1,j) = a_marg_dist_ini; % Initial marginal dist
-                    gg_t(:,:,n,j) = g_ini;
+                    K_new(n,j) = iniSS.capital; % Initial Capital
+                    C_t(1,j) = iniSS.consumption; % Initial Consumption
+                    marginal_dists(:,1,j) = iniSS.wealth_dist; % Initial marginal dist
+                    gg_t(:,:,n,j) = iniSS.joint_dist;
                 else
                     % reescale in order for integral to sum 1
                     gg_reesc = grid_diag\gg(:,:,n);
@@ -155,6 +168,7 @@ gg_t = zeros(N_a,n_z,N_t,n_rho);
 else
 gg_t = zeros(N_a,n_z,N_t);    
 marginal_dists = zeros(N_a,N_t);
+C_t = zeros(N_t,1);
     for it = 1:maxit
         fprintf('ITERATION = %d\n',it);
         % Guessing path for prices given path of capital
@@ -162,20 +176,20 @@ marginal_dists = zeros(N_a,N_t);
         w_t = (1-alpha)*(K_t.^(alpha)).*L.^(-alpha);
         lump_sum_t = tau*w_t*L;
         % ============== Block 1: Solve backwards value functions =============
-        [L_t,con_t] = vfi_time(r_t,w_t,lump_sum_t,0,V_fin,Lambda_z,a_grid,z_grid,N_t, ...
+        [L_t,con_t] = vfi_time(r_t,w_t,lump_sum_t,0,V_T,Lambda_z,a_grid,z_grid,N_t, ...
             bl_path,dt,parameters);
 
         % ================ Block 2: Solve distributions forward ===============
 
-        gg = KF_time(g_ini,L_t,N_a,n_z,N_t,dt,grid_diag);
+        gg = KF_time(iniSS.joint_dist,L_t,N_a,n_z,N_t,dt,grid_diag);
 
         % Take distributions and calculate objects of interest + update guess
         for n = 1:N_t
             if n == 1
-                K_new(n) = K_ini; % Initial Capital
-                C_t(1) = C_ini; % Initial Consumption
-                marginal_dists{1} = a_marg_dist_ini; % Initial marginal dist
-                gg_t(:,:,n) = g_ini;
+                K_new(n) = iniSS.capital; % Initial Capital
+                C_t(1) = iniSS.consumption; % Initial Consumption
+                marginal_dists(:,n) = iniSS.wealth_dist; % Initial marginal dist
+                gg_t(:,:,n) = iniSS.joint_dist; % initial joint distribution
             else
                 % reescale in order for integral to sum 1
                 gg_reesc = grid_diag\gg(:,:,n);
@@ -214,6 +228,17 @@ Y_t = L.*(alpha./(r_t+dep)).^(alpha/(1-alpha));
 I_t = Y_t - C_t';
 % marginal distributions
 a_marg_t = marginal_dists;
+
+% store transition paths as a struct
+transition_allocation.output = Y_t;
+transition_allocation.consumption = C_t';
+transition_allocation.investment = I_t;
+transition_allocation.capital = K_t;
+transition_allocation.joint_dist = gg_t;
+transition_allocation.wealth_dist = a_marg_t;
+transition_allocation.interest = r_t;
+transition_allocation.wage = w_t;
+transition_allocation.lump_sum = lump_sum_t;
 
 end
 

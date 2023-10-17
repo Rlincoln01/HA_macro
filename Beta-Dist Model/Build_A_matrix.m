@@ -40,7 +40,11 @@ Vaf(n_a,:) = ((1-tau)*w*exp(z_grid + omega) + r.*amax + lump_sum).^(-gamma);
 
 Vab(idx+1:n_a,:) = max(exp(1)^(-10),(V((idx+1):n_a,:)-V(idx:n_a-1,:))./daab((idx+1):n_a,:));
 for j = 1:idx
+    % consumption adjustment - Household goes back to the borrowing limit
+    % next period if below it in this period.
+    % adj = -(a_grid(j)-a_grid(idx)); 
     Vab(j,:) = max(exp(1)^(-10),((1-tau)*w*exp(z_grid + omega) + r.*a_grid(j) + lump_sum).^(-gamma));  % state constraint boundary condition
+    % Vab(j,:) = (1-tau)*w*exp(z_grid + omega) + r.*a_grid(j) + lump_sum-adj;
 end
 
 % 1.3 - Build F&B Policy Functions
