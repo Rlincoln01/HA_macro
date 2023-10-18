@@ -57,11 +57,11 @@ parameters.T = 75;                             % termination period of the time 
 
 
 % Calibration
-parameters.delta_rho_1 = 0.0014;               % distribution parameters of disc. rate het.
-parameters.delta_rho_2 = 0.0005;               % distribution parameters of disc. rate het.
-borrowing_limit = -1.9267;                     % Borrowing Limit
-parameters.rho = 0.0674;                       % Average discount rate of the economy
-parameters.tau = 0.2183;                       % Tax rate
+parameters.delta_rho_1 = 0.0033;               % distribution parameters of disc. rate het.
+parameters.delta_rho_2 = 0.0020;               % distribution parameters of disc. rate het.
+borrowing_limit = -2.5414;                     % Borrowing Limit
+parameters.rho = 0.0743;                       % Average discount rate of the economy
+parameters.tau = 0.2170;                       % Tax rate
 
 % ============================ Asset grid =============================== %
 
@@ -122,7 +122,7 @@ epsilon = 1;
 bl_after = borrowing_limit - epsilon;
 
 % Compute transitory shock to the borrowing limit
-nu = 0.08;
+nu = 0.2;
 bl_path = zeros(N_t,1);
 % bl_path(1) = borrowing_limit; bl_path(N_t) = bl_after;
 bl_path(1) = borrowing_limit; bl_path(N_t) = borrowing_limit;
@@ -147,9 +147,11 @@ end
 %     bl_path(n+1) = bl_path(n) + dt*nu*(a_min_final-bl_path(n));
 % end
 tic;
-transition_allocation.levels = transition_path(...
+transition_allocation.levels = transition_path_new(...
     parameters,specification,a_grid,bl_path);
 toc;
+
+ 
 % gini, debt-to-dgp and indebted HHs stats
 gini_t = zeros(N_t,1);
 debt_to_gdp_t = zeros(N_t,1);
@@ -165,7 +167,7 @@ for n=1:N_t
         transition_allocation.levels.lump_sum(n));
 end    
 
-wealth_output_t = (transition_allocation.capital)./transition_allocation.output;
+wealth_output_t = (transition_allocation.levels.capital)./transition_allocation.levels.output;
 
 transition_allocation.levels.gini = gini_t;
 transition_allocation.levels.debt_to_gdp = 100.*debt_to_gdp_t;
@@ -173,14 +175,25 @@ transition_allocation.levels.indebted_hhs = 100.*indebted_hhs_t;
 transition_allocation.levels.wealth_output = wealth_output_t;
 
 % Compute % deviations from steady state
-transition_allocation.dev_ss.output = 100.*log(transition_allocation.levels.output./initial_SS.output);
-transition_allocation.dev_ss.consumption = 100.*log(transition_allocation.levels.consumption./initial_SS.consumption);
-transition_allocation.dev_ss.investment = 100.*log(transition_allocation.levels.investment./initial_SS.investment);
-transition_allocation.dev_ss.capital = 100.*log(transition_allocation.levels.capital./initial_SS.capital);
-transition_allocation.dev_ss.interest = 10000.*(transition_allocation.levels.interest - initial_SS.interest); % Basis Points
-transition_allocation.dev_ss.wage = 100.*log(transition_allocation.levels.wage./initial_SS.wage);
-transition_allocation.dev_ss.lump_sum = 100.*log(transition_allocation.levels.consumption./initial_SS.consumption);
+% transition_allocation.dev_ss.output = 100.*log(transition_allocation.levels.output./initial_SS.output);
+% transition_allocation.dev_ss.consumption = 100.*log(transition_allocation.levels.consumption./initial_SS.consumption);
+% transition_allocation.dev_ss.investment = 100.*log(transition_allocation.levels.investment./initial_SS.investment);
+% transition_allocation.dev_ss.capital = 100.*log(transition_allocation.levels.capital./initial_SS.capital);
+% transition_allocation.dev_ss.interest = 10000.*(transition_allocation.levels.interest - initial_SS.interest); % Basis Points
+% transition_allocation.dev_ss.wage = 100.*log(transition_allocation.levels.wage./initial_SS.wage);
+% transition_allocation.dev_ss.lump_sum = 100.*log(transition_allocation.levels.consumption./initial_SS.consumption);
+% transition_allocation.dev_ss.bl_path = 100.*log(bl_path./bl_path(1));
+
+% Compute % deviations from steady state
+transition_allocation.dev_ss.output = 100.*log(transition_allocation.levels.output./transition_allocation.levels.output(1));
+transition_allocation.dev_ss.consumption = 100.*log(transition_allocation.levels.consumption./transition_allocation.levels.consumption(1));
+transition_allocation.dev_ss.investment = 100.*log(transition_allocation.levels.investment./transition_allocation.levels.investment(1));
+transition_allocation.dev_ss.capital = 100.*log(transition_allocation.levels.capital./transition_allocation.levels.capital(1));
+transition_allocation.dev_ss.interest = 10000.*(transition_allocation.levels.interest - transition_allocation.levels.interest(1)); % Basis Points
+transition_allocation.dev_ss.wage = 100.*log(transition_allocation.levels.wage./transition_allocation.levels.wage(1));
+transition_allocation.dev_ss.lump_sum = 100.*log(transition_allocation.levels.lump_sum./transition_allocation.levels.lump_sum(1));
 transition_allocation.dev_ss.bl_path = 100.*log(bl_path./bl_path(1));
+
 
 
 % Plot the solution
@@ -282,7 +295,7 @@ sgtitle('Credit Shock','Interpreter','latex','FontSize',20);
 % ================= IRF MIT-shock borrowing constraint ========================= %
 
 % general equilibrium consumption
-C_t_GE = transition_allocation.consumption;
+C_t_GE = transition_allocation.levels.consumption;
 
 % Partial Eq. paths for theta = \underline{a}
 Gamma_t.PE_credit.wages_t = initial_SS.wage.*ones(1,N_t);
@@ -293,7 +306,7 @@ Gamma_t.PE_credit.lump_sum_t = initial_SS.lump_sum.*ones(1,N_t);
 C_t_PE_credit = PE_decomposition(parameters,specification,Gamma_t.PE_credit,a_grid,initial_SS);
 
 % Partial Eq. paths for theta = w_t
-Gamma_t.PE_wages.wages_t = transition_allocation.wage;
+Gamma_t.PE_wages.wages_t = transition_allocation.levels.wage;
 Gamma_t.PE_wages.bl_t = bl_path(1).*ones(1,N_t);
 Gamma_t.PE_wages.interest_t = initial_SS.interest.*ones(1,N_t);
 Gamma_t.PE_wages.lump_sum_t = initial_SS.lump_sum.*ones(1,N_t);
@@ -303,7 +316,7 @@ C_t_PE_wages = PE_decomposition(parameters,specification,Gamma_t.PE_wages,a_grid
 % Partial Eq. paths for theta = r_t
 Gamma_t.PE_interest.wages_t = initial_SS.wage.*ones(1,N_t);
 Gamma_t.PE_interest.bl_t = bl_path(1).*ones(1,N_t);
-Gamma_t.PE_interest.interest_t = transition_allocation.interest;
+Gamma_t.PE_interest.interest_t = transition_allocation.levels.interest;
 Gamma_t.PE_interest.lump_sum_t = initial_SS.lump_sum.*ones(1,N_t);
 
 C_t_PE_interest = PE_decomposition(parameters,specification,Gamma_t.PE_interest,a_grid,initial_SS);
@@ -312,7 +325,7 @@ C_t_PE_interest = PE_decomposition(parameters,specification,Gamma_t.PE_interest,
 Gamma_t.PE_lump_sum.wages_t = initial_SS.wage.*ones(1,N_t);
 Gamma_t.PE_lump_sum.bl_t = bl_path(1).*ones(1,N_t);
 Gamma_t.PE_lump_sum.interest_t = initial_SS.interest.*ones(1,N_t);
-Gamma_t.PE_lump_sum.lump_sum_t = transition_allocation.lump_sum;
+Gamma_t.PE_lump_sum.lump_sum_t = transition_allocation.levels.lump_sum;
 
 C_t_PE_lump_sum = PE_decomposition(parameters,specification,Gamma_t.PE_lump_sum,a_grid,initial_SS);
 
@@ -349,9 +362,9 @@ saveas(f,fullfile(filepath,"con_decomposition"),"epsc");
 % ================= Computing elasticities ========================= %
 
 % compute aggregate variables' deviation from SS
-dtot.output = transition_allocation.output - initial_SS.output;
-dtot.consumption = transition_allocation.consumption - initial_SS.consumption;
-dtot.investment = transition_allocation.investment - initial_SS.investment;
+dtot.output = transition_allocation.levels.output - initial_SS.output;
+dtot.consumption = transition_allocation.levels.consumption - initial_SS.consumption;
+dtot.investment = transition_allocation.levels.investment - initial_SS.investment;
 dtot.C_PE_credit = C_t_PE_credit - initial_SS.consumption;
 dtot.C_PE_lump_sum = C_t_PE_lump_sum - initial_SS.consumption;
 dtot.C_PE_interest = C_t_PE_interest - initial_SS.consumption;
